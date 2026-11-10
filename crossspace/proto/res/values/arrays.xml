@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- LSPosed 推荐作用域：本模块工作在 system_server 与系统选择器里，
+     装上后在作用域页直接用「推荐」即可勾齐，不必逐个找。 -->
+<resources>
+    <string-array name="xposed_scope">
+        <!-- 系统框架 / system_server：ATMS#startActivityAsUser、PMS 注入都在这里 -->
+        <item>system</item>
+        <item>android</item>
+        <!-- 系统选择器：排序兜底 hook -->
+        <item>com.android.intentresolver</item>
+    </string-array>
+</resources>
