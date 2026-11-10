@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.crossspace.proto"
-    android:versionCode="3"
-    android:versionName="0.3">
+    android:versionCode="4"
+    android:versionName="0.3.1">
 
     <uses-sdk android:minSdkVersion="29" android:targetSdkVersion="34" />
 
@@ -39,5 +39,11 @@
         <meta-data android:name="xposedmodule" android:value="true" />
         <meta-data android:name="xposeddescription" android:value="跨空间支付选择器最小原型" />
         <meta-data android:name="xposedminversion" android:value="93" />
+
+        <!-- LSPosed 推荐作用域：作用域页会直接高亮下面三项，不用逐个找。
+             system = 注入 system_server（ATMS / PMS 都在里面）
+             android = 系统框架，PMS 注入兜底那条走这里
+             com.android.intentresolver = 系统选择器侧的排序兜底 -->
+        <meta-data android:name="xposedscope" android:resource="@array/xposed_scope" />
     </application>
 </manifest>
