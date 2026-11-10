@@ -5,6 +5,9 @@ LSPosed 模块。外部应用（或系统）要拉起微信 / 支付宝时，弹
 
 已实测通过：ColorOS 15 / OnePlus PJX110 / SDK 35 / 2026-11-09。
 
+> 不想自己编译：直接去 [v0.3 Release](https://github.com/dixueshizi/crossspace/releases/tag/v0.3) 下载
+> `crossspace-proto-v0.3.apk` 安装即可；那里也附了编译用的 `api-82.jar`。
+
 ## 1. 现在的实现（不是最早那版）
 
 最早的最小验证是「往系统选择器里追加一条 u15 候选」，链路能通（见 `../../docs/跨空间调用方案.md` 13.8.1），
@@ -62,7 +65,9 @@ powershell -File build.ps1
 不设 `ANDROID_JAR` / `BUILD_TOOLS` 时，脚本会尝试从 `ANDROID_HOME` / `ANDROID_SDK_ROOT` 下自动找
 `build-tools` 与 `platforms/android-35/android.jar`；三个变量都找不到时会直接报错退出。
 
-依赖：Xposed API 的 `lib/api-82.jar`（仓库不收录二进制，请自行从 Xposed / LSPosed 官方源获取后放到该路径）。
+依赖：Xposed API 的 `lib/api-82.jar`（第三方二进制，代码树不收录）。它已作为
+[v0.3 Release 附件](https://github.com/dixueshizi/crossspace/releases/tag/v0.3) 提供，下载后放到该路径即可；
+也可以自行从 Xposed / LSPosed 官方源获取。
 
 产物：`crossspace-proto.apk`（自动生成 `debug.keystore` 签名，仅本地调试用）。
 
