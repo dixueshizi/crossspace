@@ -5,8 +5,8 @@ LSPosed 模块。外部应用（或系统）要拉起微信 / 支付宝时，弹
 
 已实测通过：ColorOS 15 / OnePlus PJX110 / SDK 35 / 2026-11-09。
 
-> 不想自己编译：直接去 [v0.3 Release](https://github.com/dixueshizi/crossspace/releases/tag/v0.3) 下载
-> `crossspace-proto-v0.3.apk` 安装即可；那里也附了编译用的 `api-82.jar`。
+> 不想自己编译：直接去 [v0.3.1 Release](https://github.com/dixueshizi/crossspace/releases/tag/v0.3.1) 下载
+> `crossspace-proto-v0.3.1.apk` 安装即可；那里也附了编译用的 `api-82.jar`。
 
 ## 1. 现在的实现（不是最早那版）
 
@@ -66,10 +66,13 @@ powershell -File build.ps1
 `build-tools` 与 `platforms/android-35/android.jar`；三个变量都找不到时会直接报错退出。
 
 依赖：Xposed API 的 `lib/api-82.jar`（第三方二进制，代码树不收录）。它已作为
-[v0.3 Release 附件](https://github.com/dixueshizi/crossspace/releases/tag/v0.3) 提供，下载后放到该路径即可；
+[v0.3.1 Release 附件](https://github.com/dixueshizi/crossspace/releases/tag/v0.3.1) 提供，下载后放到该路径即可；
 也可以自行从 Xposed / LSPosed 官方源获取。
 
 产物：`crossspace-proto.apk`（自动生成 `debug.keystore` 签名，仅本地调试用）。
+
+打包脚本会先跑 `aapt2 compile --dir res` 再 `aapt2 link`，所以 `res/values/arrays.xml`（推荐作用域数组）
+会进 `resources.arsc`；没有 `res/` 目录时自动跳过该步。
 
 **dex 步骤优先用 Android Studio 自带的 `r8.jar`**（可用 `R8_JAR` 环境变量覆盖）。
 原因：build-tools 里的 R8 8.2.2 遇到「带外部实例的匿名内部类」会抛
@@ -83,8 +86,22 @@ powershell -File build.ps1
 adb install --no-incremental -r crossspace-proto.apk
 ```
 
-LSPosed 里勾选模块，作用域至少：`system`（system_server / android）、`com.android.intentresolver`。
+LSPosed 里启用模块，作用域至少：`system`（system_server / android）、`com.android.intentresolver`。
 装完重启一次（软重启即可）。**装完立刻重启偶发 `PackageParserException` 解析失败**，再重启一次就好。
+
+**推荐作用域（v0.3.1 起自动带上）**：模块清单里声明了
+`<meta-data android:name="xposedscope" android:resource="@array/xposed_scope" />`，
+数组在 `res/values/arrays.xml`。所以 LSPosed 作用域页会出现「推荐」入口，一键预勾下面三项，
+不用自己一个个去找：
+
+| 作用域项 | 为什么要 |
+|---|---|
+| `system` | 注入 system_server，ATMS `startActivityAsUser` 钩子、PMS 注入都在这里 |
+| `android` | 系统框架，PMS 注入兜底那条路径 |
+| `com.android.intentresolver` | 系统选择器侧的排序兜底 |
+
+LSPosed 管理器不会把这三项标成「默认已选」——它只提供推荐，最终还需你点一下确认；
+验证方式：`adb shell dumpsys activity service` 看 `BOOT rev=` 是否变成新版。
 
 没有 LSPosed 管理器 UI 时，也可以直接改 `/data/adb/lspd/config/modules_config.db` 完成注册，等价 SQL：
 
@@ -177,34 +194,6 @@ dex 里也有新字符串，但落盘 `BOOT rev` 还是旧值的情况——LSPo
 注意：`com.crossspace.proto` 未安装到 999 空间，999 那条 `grantViaOwnApp` 等于空转（本次实测通过是因为该空间微信
 对媒体 URI 已可读）。若 999 出现读不到图，先把模块包装到 999。
 
-## 5. 当前边界（如实）
-
-- 只处理外部应用发起的 intent：`userId == 0` 发起方 + `WATCH_PKGS`（微信、支付宝）硬编码在 `Main.java`。
-  其它应用（QQ/抖音）要加进 `WATCH_PKGS` 再编译。
-- **每次必弹**：自建 UI 没有「记住我的选择」，系统缓存也不再介入（这是有意的，避免上次的选择误导下一次）。
-  要「记住」需要自己写 SharedPreferences 持久化。
-- 不接管系统选择器 UI；`com.android.intentresolver` 作用域里还有探针/排序兜底 hook（给 PMS 注入那条旧路线用）。
-- NFC「碰一碰」未实机验证：NDEF/scheme 拉起会进这条选择器，HCE APDU 在 NFC 控制器层按 AID 路由，Intent 层拦不到
-  （结论仍是静态推断，见 `../../docs/跨空间调用方案.md` 13.7）。
-- 锁屏状态下选择器能弹出，但系统的 USB 用途弹窗可能盖在上面；测试前先点亮并解锁屏幕更稳。
-- 图标依赖 manifest 里的 `<queries>` 声明（Android 11+ 包可见性），删掉会出现图标空白。
-
-## 6. 回退
-
-```powershell
-adb uninstall com.crossspace.proto          # 或 LSPosed 管理器取消勾选
-```
-
-若出现 system_server 软重启循环：进 recovery 删模块目录 / 卸载 APK，本模块不写系统分区。
-
-## 7. 风险提示
-
-hook 在 system_server 内，异常已全部包 try/catch，但仍有拖慢解析、干扰多开选择器的可能。
-`SpaceChooserActivity` 为了能被 system_server 拉起必须 `exported="true"`（系统 uid 不受该限制，
-但 hook 走的是 system context 之外的一跳），其它应用理论上也能直接启动它；
-它只读自己 intent 里的 extras，不做敏感操作，最坏情况是被拉起一个空列表并 `finish()`。
-不确定是否长期保留时，用完就取消勾选。
-
 ## 4.2 v0.3（2026-11-10）：主空间图片分享打不开 —— 根因与实现
 现象：分享图片给「微信 · 主空间」时，微信打开后又立刻退回相册；而 999/10–16 各空间正常，
 「微信收藏 / 朋友圈 / 微信状态」也正常。
@@ -223,3 +212,24 @@ Android 15 的 `enforceRequireContentUriPermissionFromCallerOnIntentExtraStream`
 实测：u0 `topResumedActivity=u0 com.tencent.mm/.ui.transmit.SelectConversationUI`。
 已知限制：只处理单个 URI 的 `ACTION_SEND`；多选 `ACTION_SEND_MULTIPLE` 未处理；
 路径必须在共享存储内（私有目录不适用）。
+
+## 4.3 v0.3.1（2026-11-10）：声明 LSPosed 推荐作用域
+只改清单与资源，不改 hook 逻辑：
+
+- `AndroidManifest.xml` 新增 `<meta-data android:name="xposedscope" android:resource="@array/xposed_scope" />`，
+  并把 `versionCode` 提到 4、`versionName` 到 `0.3.1`；
+- 新增 `res/values/arrays.xml`，内容是 `system` / `android` / `com.android.intentresolver` 三项；
+- `build.ps1` 增加一步 `aapt2 compile --dir res`，把编译结果作为 `aapt2 link` 的额外输入
+  （之前只传 `--manifest` 和 `-A assets`，没有任何资源）。
+
+验证方式：
+
+```powershell
+# 清单里有没有 xposedscope，且指向 @array/xposed_scope
+aapt2 dump xmltree crossspace-proto.apk AndroidManifest.xml | findstr xposedscope
+# 数组里到底是哪几项
+aapt2 dump resources crossspace-proto.apk | findstr /C:"array/xposed_scope" -A 3
+# 应为：() (array) size=3 → ["system", "android", "com.android.intentresolver"]
+```
+
+签名证书与 v0.3 一致（`CN=CrossSpace Proto`），可 `adb install -r` 覆盖安装。
