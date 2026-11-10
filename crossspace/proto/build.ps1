@@ -53,7 +53,7 @@ $src = Join-Path $root "src"
 $classes = Join-Path $work "classes"
 New-Item -ItemType Directory -Path $classes | Out-Null
 $sources = Get-ChildItem $src -Recurse -Filter *.java | ForEach-Object { $_.FullName }
-Write-Host "[1/6] javac $($sources.Count) file(s)"
+Write-Host "[1/7] javac $($sources.Count) file(s)"
 & "$javaHome\bin\javac.exe" -encoding UTF-8 -source 1.8 -target 1.8 -Xlint:-options `
     -bootclasspath $androidJar `
     -classpath "$root\lib\api-82.jar" `
@@ -62,7 +62,7 @@ if ($LASTEXITCODE -ne 0) { throw "javac failed" }
 
 # 2. dex（优先用 Android Studio 自带的新版 r8.jar：build-tools 里的旧 R8
 #    遇到"带外部实例的匿名内部类"会抛 NPE，已在 SpaceChooserActivity$1 复现）
-Write-Host "[2/6] dex"
+Write-Host "[2/7] dex"
 $jar = Join-Path $work "classes.jar"
 & "$javaHome\bin\jar.exe" cf $jar -C $classes .
 $dexdir = Join-Path $work "dex"
@@ -86,31 +86,44 @@ if ($r8Jar) {
 }
 if ($LASTEXITCODE -ne 0) { throw "dex failed" }
 
-# 3. aapt2 link（生成含二进制清单与 assets 的 APK）
-Write-Host "[3/6] aapt2 link"
+# 3. aapt2 compile（资源：res/values/arrays.xml 里的 LSPosed 推荐作用域数组）
+Write-Host "[3/7] aapt2 compile res"
+$res = Join-Path $root "res"
+$resZip = Join-Path $work "res.zip"
+$resArgs = @()
+if (Test-Path $res) {
+    & "$buildTools\aapt2.exe" compile --dir $res -o $resZip
+    if ($LASTEXITCODE -ne 0) { throw "aapt2 compile failed" }
+    $resArgs = @($resZip)
+} else {
+    Write-Host "       no res/ directory, skipped"
+}
+
+# 4. aapt2 link（生成含二进制清单、资源表与 assets 的 APK）
+Write-Host "[4/7] aapt2 link"
 $base = Join-Path $work "base.apk"
 & "$buildTools\aapt2.exe" link -o $base -I $androidJar `
     --manifest (Join-Path $root "AndroidManifest.xml") `
     -A (Join-Path $root "assets") `
-    --auto-add-overlay
+    --auto-add-overlay @resArgs
 if ($LASTEXITCODE -ne 0) { throw "aapt2 link failed" }
 
-# 4. 塞入 classes.dex
-Write-Host "[4/6] add classes.dex"
+# 5. 塞入 classes.dex
+Write-Host "[5/7] add classes.dex"
 Push-Location $dexdir
 try {
     & "$buildTools\aapt.exe" add $base "classes.dex"
     if ($LASTEXITCODE -ne 0) { throw "aapt add failed" }
 } finally { Pop-Location }
 
-# 5. zipalign
-Write-Host "[5/6] zipalign"
+# 6. zipalign
+Write-Host "[6/7] zipalign"
 $aligned = Join-Path $work "aligned.apk"
 & "$buildTools\zipalign.exe" -f 4 $base $aligned
 if ($LASTEXITCODE -ne 0) { throw "zipalign failed" }
 
-# 6. 签名（首次自动生成调试密钥）
-Write-Host "[6/6] apksigner"
+# 7. 签名（首次自动生成调试密钥）
+Write-Host "[7/7] apksigner"
 $ks = Join-Path $root "debug.keystore"
 if (-not (Test-Path $ks)) {
     & "$javaHome\bin\keytool.exe" -genkeypair -v -keystore $ks -alias csproto `
