@@ -36,6 +36,15 @@ legacy/
   wxspace.sh           # 早期必须 root 的版本，保留作参考
 ```
 
+## 直接下载（已编译产物）
+
+[v0.3 Release](https://github.com/dixueshizi/crossspace/releases/tag/v0.3) 附带两个二进制：
+
+- `crossspace-proto-v0.3.apk` —— 已编译好的模块本体（versionCode 3 / versionName 0.3，minSdk 29、targetSdk 34），装进手机后在 LSPosed 里勾选作用域即可用，不想自己编译就下这个；
+- `api-82.jar` —— 编译用的 Xposed API，自行构建时放到 `crossspace/proto/lib/api-82.jar`。
+
+这两个文件都不进代码树（APK 与第三方 jar 不随源码分发），需要时从 Release 页取；Release 里的 APK 就是本仓库源码构建出来的，若你要改代码，照下面「快速开始（模块层）」自己编译即可。
+
 ## 快速开始（脚本层）
 
 ```powershell
@@ -72,7 +81,7 @@ su -c 'sh /data/local/tmp/crossspace/crossspace.sh 10 alipay scan'
 
 ```powershell
 cd crossspace\proto
-# 先把 Xposed API 放到 lib\api-82.jar（仓库不收录二进制，来源见下）
+# 先把 Xposed API 放到 lib\api-82.jar（从 Releases 的 v0.3 附件下载，见上）
 $env:ANDROID_JAR  = "<sdk>\platforms\android-35\android.jar"
 $env:BUILD_TOOLS  = "<sdk>\build-tools\34.0.0"
 $env:JAVA_HOME    = "<jdk 或 Android Studio jbr>"
@@ -83,7 +92,7 @@ adb install --no-incremental -r crossspace-proto.apk
 
 装完在 LSPosed 管理器里勾选模块，作用域至少选 `system`、`android`、`com.android.intentresolver`，然后重启。
 
-> `lib/api-82.jar` 是 Xposed API 的编译期依赖，属于第三方二进制，仓库里不放，请自行从 Xposed / LSPosed 官方源获取后放到该路径。签名用的 `debug.keystore` 由 `build.ps1` 首次运行时自动生成，也不入库。
+> `lib/api-82.jar` 是 Xposed API 的编译期依赖，属于第三方二进制，代码树里不放。它已作为 [v0.3 Release 附件](https://github.com/dixueshizi/crossspace/releases/tag/v0.3) 提供，下载后放到该路径即可；也可以自行从 Xposed / LSPosed 官方源获取。签名用的 `debug.keystore` 由 `build.ps1` 首次运行时自动生成，同样不入库。
 
 ## 实测环境
 
@@ -104,7 +113,7 @@ ColorOS 15（OnePlus PJX110）SDK 35，脚本层用 `adb shell`（无 root）通
 
 ## 免责声明
 
-本项目是系统级调试/研究工具，会使用 adb、root、LSPosed 等能力，可能触发 ROM 的稳定性与风控行为。请只在**你自己拥有或明确授权**的设备上使用，遵守微信/支付宝等第三方应用的《用户协议》与当地法律；因使用本工具造成的任何后果由使用者自行承担。仓库不包含任何第三方应用的反编译产物、APK 或实机截图。
+本项目是系统级调试/研究工具，会使用 adb、root、LSPosed 等能力，可能触发 ROM 的稳定性与风控行为。请只在**你自己拥有或明确授权**的设备上使用，遵守微信/支付宝等第三方应用的《用户协议》与当地法律；因使用本工具造成的任何后果由使用者自行承担。代码树中不包含任何第三方应用的反编译产物、APK 或实机截图；本项目自己构建出的模块 APK 仅通过 Release 发布。
 
 ## License
 
