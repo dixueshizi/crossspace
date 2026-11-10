@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.crossspace.proto"
+    android:versionCode="3"
+    android:versionName="0.3">
+
+    <uses-sdk android:minSdkVersion="29" android:targetSdkVersion="34" />
+
+    <!-- 图片中转 provider 需要能自己读相册里的原图（装完用 pm grant 授予） -->
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+    <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+
+    <!-- Android 11+ 包可见性：选择器要读这两个包的图标，否则 loadIcon 抛 NameNotFound -->
+    <queries>
+        <package android:name="com.tencent.mm" />
+        <package android:name="com.eg.android.AlipayGphone" />
+    </queries>
+
+    <application
+        android:label="跨空间选择器原型"
+        android:hasCode="true">
+
+        <activity
+            android:name=".SpaceChooserActivity"
+            android:exported="true"
+            android:excludeFromRecents="true"
+            android:launchMode="singleInstance"
+            android:theme="@android:style/Theme.DeviceDefault.Light" />
+
+        <!-- 只读图片中转：跨空间分享时把 content://media/... 换成这个 URI，
+             目标应用可读、再转发也不会被 URI 权限检查打死 -->
+        <provider
+            android:name=".ShareProvider"
+            android:authorities="com.crossspace.proto.share"
+            android:exported="true"
+            android:grantUriPermissions="true" />
+
+        <meta-data android:name="xposedmodule" android:value="true" />
+        <meta-data android:name="xposeddescription" android:value="跨空间支付选择器最小原型" />
+        <meta-data android:name="xposedminversion" android:value="93" />
+    </application>
+</manifest>
