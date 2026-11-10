@@ -38,9 +38,9 @@ legacy/
 
 ## 直接下载（已编译产物）
 
-[v0.3 Release](https://github.com/dixueshizi/crossspace/releases/tag/v0.3) 附带两个二进制：
+[v0.3.1 Release](https://github.com/dixueshizi/crossspace/releases/tag/v0.3.1) 附带两个二进制：
 
-- `crossspace-proto-v0.3.apk` —— 已编译好的模块本体（versionCode 3 / versionName 0.3，minSdk 29、targetSdk 34），装进手机后在 LSPosed 里勾选作用域即可用，不想自己编译就下这个；
+- `crossspace-proto-v0.3.1.apk` —— 已编译好的模块本体（versionCode 4 / versionName 0.3.1，minSdk 29、targetSdk 34），装上后在 LSPosed 里勾选作用域即可用，不想自己编译就下这个；
 - `api-82.jar` —— 编译用的 Xposed API，自行构建时放到 `crossspace/proto/lib/api-82.jar`。
 
 这两个文件都不进代码树（APK 与第三方 jar 不随源码分发），需要时从 Release 页取；Release 里的 APK 就是本仓库源码构建出来的，若你要改代码，照下面「快速开始（模块层）」自己编译即可。
@@ -81,7 +81,7 @@ su -c 'sh /data/local/tmp/crossspace/crossspace.sh 10 alipay scan'
 
 ```powershell
 cd crossspace\proto
-# 先把 Xposed API 放到 lib\api-82.jar（从 Releases 的 v0.3 附件下载，见上）
+# 先把 Xposed API 放到 lib\api-82.jar（从 Releases 的 v0.3.1 附件下载，见上）
 $env:ANDROID_JAR  = "<sdk>\platforms\android-35\android.jar"
 $env:BUILD_TOOLS  = "<sdk>\build-tools\34.0.0"
 $env:JAVA_HOME    = "<jdk 或 Android Studio jbr>"
@@ -90,9 +90,9 @@ powershell -File build.ps1
 adb install --no-incremental -r crossspace-proto.apk
 ```
 
-装完在 LSPosed 管理器里勾选模块，作用域至少选 `system`、`android`、`com.android.intentresolver`，然后重启。
+装完打开 LSPosed 管理器：启用模块 → 进「作用域」页 → 点**推荐**（模块已在清单里声明 `xposedscope`，会直接 Booking 出 `system` / `android` / `com.android.intentresolver` 三项），然后重启 system_server。
 
-> `lib/api-82.jar` 是 Xposed API 的编译期依赖，属于第三方二进制，代码树里不放。它已作为 [v0.3 Release 附件](https://github.com/dixueshizi/crossspace/releases/tag/v0.3) 提供，下载后放到该路径即可；也可以自行从 Xposed / LSPosed 官方源获取。签名用的 `debug.keystore` 由 `build.ps1` 首次运行时自动生成，同样不入库。
+> `lib/api-82.jar` 是 Xposed API 的编译期依赖，属于第三方二进制，代码树里不放。它已作为 [v0.3.1 Release 附件](https://github.com/dixueshizi/crossspace/releases/tag/v0.3.1) 提供，下载后放到该路径即可；也可以自行从 Xposed / LSPosed 官方源获取。签名用的 `debug.keystore` 由 `build.ps1` 首次运行时自动生成，同样不入库。
 
 ## 实测环境
 
