@@ -90,7 +90,15 @@ powershell -File build.ps1
 adb install --no-incremental -r crossspace-proto.apk
 ```
 
-装完打开 LSPosed 管理器：启用模块 → 进「作用域」页 → 点**推荐**（模块已在清单里声明 `xposedscope`，会直接 Booking 出 `system` / `android` / `com.android.intentresolver` 三项），然后重启 system_server。
+装完打开 LSPosed 管理器：启用模块 → 进「作用域」页 → 点**推荐**。模块已在清单里声明 `xposedscope`，作用域页会直接把下面三项预勾上，不用逐个去找：
+
+| 作用域项 | 为什么要 |
+|---|---|
+| `system` | 注入 system_server，ATMS `startActivityAsUser` 钩子、PMS 注入都在这里 |
+| `android` | 系统框架，PMS 注入兜底那条路径 |
+| `com.android.intentresolver` | 系统选择器侧的排序兜底 |
+
+勾完重启 system_server 生效。
 
 > `lib/api-82.jar` 是 Xposed API 的编译期依赖，属于第三方二进制，代码树里不放。它已作为 [v0.3.1 Release 附件](https://github.com/dixueshizi/crossspace/releases/tag/v0.3.1) 提供，下载后放到该路径即可；也可以自行从 Xposed / LSPosed 官方源获取。签名用的 `debug.keystore` 由 `build.ps1` 首次运行时自动生成，同样不入库。
 
