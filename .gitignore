@@ -1,0 +1,22 @@
+# 构建产物
+build/
+*.apk
+*.idsig
+*.dex
+*.class
+*.jar
+!crossspace/proto/lib/api-82.jar
+
+# 本地调试签名
+*.keystore
+
+# 实机截图与隐私素材，一律不入库
+screenshots/
+*.png
+*.jpg
+*.jpeg
+
+# 编辑器与日志
+.idea/
+.vscode/
+*.log
